@@ -258,16 +258,5 @@ namespace Day_01_G03
 									  }).ToArray()
 							 }).ToList();
 		}
-
-
-        public static List<Product> GetProducts()
-        {
-            return ProductsList;
-        }
-
-        public static List<Customer> GetCustomers()
-        {
-            return CustomersList;
-        }
     }
 }

@@ -1,195 +1,190 @@
-﻿using Day_01_G03;
-namespace LINQ.Assigenmt01
+﻿using static Day_01_G03.ListGenerator;
+
+namespace LINQ.Assignment02
 {
     internal class Program
     {
         static void Main(string[] args)
         {
-            #region Restriction Operators
-            Console.WriteLine("=== Restriction Operators ===");
-
-     
-            var products = ListGenerator.GetProducts();
-
-
-            var outOfStock = products.Where(p => p.UnitsInStock == 0);
-            Console.WriteLine("\n1. Out of Stock Products:");
-            foreach (var p in outOfStock)
-                Console.WriteLine(p.ProductName);
-
- 
-            var expensiveInStock = products.Where(p => p.UnitsInStock > 0 && p.UnitPrice > 3.00M);
-            Console.WriteLine("\n2. In stock and cost > 3:");
-            foreach (var p in expensiveInStock)
-                Console.WriteLine($"{p.ProductName} - {p.UnitPrice}");
-
-           
-            string[] ArrRestriction = { "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine" };
-            var shortNames = ArrRestriction
-                .Select((name, value) => new { name, value })
-                .Where(x => x.name.Length < x.value);
-            Console.WriteLine("\n3. Digits name shorter than value:");
-            foreach (var item in shortNames)
-                Console.WriteLine($"{item.name} - {item.value}");
-            #endregion
-
-            #region Element Operators
-            Console.WriteLine("\n=== Element Operators ===");
-            int[] ArrElement = { 5, 4, 1, 3, 9, 8, 6, 7, 2, 0 };
-
-          
-            var firstOutOfStock = products.FirstOrDefault(p => p.UnitsInStock == 0);
-            Console.WriteLine("\n1. First product out of stock: " + firstOutOfStock?.ProductName);
-
-
-            var priceGreater1000 = products.FirstOrDefault(p => p.UnitPrice > 1000);
-            Console.WriteLine("\n2. First product > 1000: " + (priceGreater1000?.ProductName ?? "null"));
-
-          
-            var secondGreaterThan5 = ArrElement.Where(n => n > 5).Skip(1).FirstOrDefault();
-            Console.WriteLine("\n3. Second number greater than 5: " + secondGreaterThan5);
-            #endregion
-
             #region Aggregate Operators
-            Console.WriteLine("\n=== Aggregate Operators ===");
-            int[] ArrAggregate = { 5, 4, 1, 3, 9, 8, 6, 7, 2, 0 };
+            Console.WriteLine("=== Aggregate Operators ===");
 
-            var oddCount = ArrAggregate.Count(n => n % 2 == 1);
-            Console.WriteLine("\n1. Count of odd numbers: " + oddCount);
+            var totalUnitsByCategory = ProductsList
+                .GroupBy(p => p.Category)
+                .Select(g => new { Category = g.Key, TotalUnits = g.Sum(p => p.UnitsInStock) });
 
-         
-            var customers = ListGenerator.GetCustomers();
-            var custOrders = customers.Select(c => new { c.CustomerID, Orders = c.Orders.Count() });
-            Console.WriteLine("\n2. Customers and order count:");
-            foreach (var c in custOrders)
-                Console.WriteLine($"{c.CustomerID} - {c.Orders}");
+            Console.WriteLine("\n1. Total Units in Stock per Category:");
+            foreach (var item in totalUnitsByCategory)
+                Console.WriteLine($"{item.Category}: {item.TotalUnits}");
 
-          
-            var catProducts = products.GroupBy(p => p.Category)
-                                      .Select(g => new { Category = g.Key, Count = g.Count() });
-            Console.WriteLine("\n3. Categories and product count:");
-            foreach (var cp in catProducts)
-                Console.WriteLine($"{cp.Category}: {cp.Count}");
+            var cheapestPrice = ProductsList
+                .GroupBy(p => p.Category)
+                .Select(g => new { Category = g.Key, MinPrice = g.Min(p => p.UnitPrice) });
 
-  
-            var total = ArrAggregate.Sum();
-            Console.WriteLine("\n4. Total numbers: " + total);
+            Console.WriteLine("\n2. Cheapest Price per Category:");
+            foreach (var item in cheapestPrice)
+                Console.WriteLine($"{item.Category}: {item.MinPrice}");
 
+            var cheapestProducts = from p in ProductsList
+                                   group p by p.Category into g
+                                   let minPrice = g.Min(p => p.UnitPrice)
+                                   from p2 in g
+                                   where p2.UnitPrice == minPrice
+                                   select new { g.Key, p2.ProductName, p2.UnitPrice };
+
+            Console.WriteLine("\n3. Cheapest Products per Category:");
+            foreach (var item in cheapestProducts)
+                Console.WriteLine($"{item.Key}: {item.ProductName} - {item.UnitPrice}");
+
+            var maxPrice = ProductsList
+                .GroupBy(p => p.Category)
+                .Select(g => new { Category = g.Key, MaxPrice = g.Max(p => p.UnitPrice) });
+
+            Console.WriteLine("\n4. Most Expensive Price per Category:");
+            foreach (var item in maxPrice)
+                Console.WriteLine($"{item.Category}: {item.MaxPrice}");
+
+            var expensiveProducts = from p in ProductsList
+                                    group p by p.Category into g
+                                    let maxPriceVal = g.Max(p => p.UnitPrice)
+                                    from p2 in g
+                                    where p2.UnitPrice == maxPriceVal
+                                    select new { g.Key, p2.ProductName, p2.UnitPrice };
+
+            Console.WriteLine("\n5. Most Expensive Products per Category:");
+            foreach (var item in expensiveProducts)
+                Console.WriteLine($"{item.Key}: {item.ProductName} - {item.UnitPrice}");
+
+            var avgPrice = ProductsList
+                .GroupBy(p => p.Category)
+                .Select(g => new { Category = g.Key, AvgPrice = g.Average(p => p.UnitPrice) });
+
+            Console.WriteLine("\n6. Average Price per Category:");
+            foreach (var item in avgPrice)
+                Console.WriteLine($"{item.Category}: {item.AvgPrice}");
+            #endregion
+
+            #region Set Operators
+            Console.WriteLine("\n=== Set Operators ===");
+            var uniqueCategories = ProductsList.Select(p => p.Category).Distinct();
+            Console.WriteLine("\n1. Unique Categories:");
+            foreach (var c in uniqueCategories)
+                Console.WriteLine(c);
+
+            var uniqueFirstLetters = ProductsList.Select(p => p.ProductName[0])
+                .Union(CustomersList.Select(c => c.CustomerID[0]));
+            Console.WriteLine("\n2. Unique First Letters:");
+            foreach (var l in uniqueFirstLetters)
+                Console.WriteLine(l);
+
+            var commonFirstLetters = ProductsList.Select(p => p.ProductName[0])
+                .Intersect(CustomersList.Select(c => c.CustomerID[0]));
+            Console.WriteLine("\n3. Common First Letters:");
+            foreach (var l in commonFirstLetters)
+                Console.WriteLine(l);
+
+            var exceptLetters = ProductsList.Select(p => p.ProductName[0])
+                .Except(CustomersList.Select(c => c.CustomerID[0]));
+            Console.WriteLine("\n4. Product First Letters NOT in Customers:");
+            foreach (var l in exceptLetters)
+                Console.WriteLine(l);
+
+            var lastThreeChars = ProductsList
+                .Select(p => p.ProductName.Substring(Math.Max(0, p.ProductName.Length - 3)))
+                .Concat(CustomersList.Select(c => c.CustomerID.Substring(Math.Max(0, c.CustomerID.Length - 3))));
+            Console.WriteLine("\n5. Last 3 Characters:");
+            foreach (var s in lastThreeChars)
+                Console.WriteLine(s);
+            #endregion
+
+            #region Partitioning Operators
+            Console.WriteLine("\n=== Partitioning Operators ===");
+
+            int[] numbers = { 5, 4, 1, 3, 9, 8, 6, 7, 2, 0 };
+
+            var first3Washington = CustomersList.Where(c => c.City == "Washington")
+                                                .SelectMany(c => c.Orders)
+                                                .Take(3);
+            Console.WriteLine("\n1. First 3 Orders from Washington:");
+            foreach (var o in first3Washington)
+                Console.WriteLine($"Order {o.OrderID}");
+
+            var skip2Washington = CustomersList.Where(c => c.City == "Washington")
+                                               .SelectMany(c => c.Orders)
+                                               .Skip(2);
+            Console.WriteLine("\n2. Skip First 2 Orders from Washington:");
+            foreach (var o in skip2Washington)
+                Console.WriteLine($"Order {o.OrderID}");
+
+            var untilLess = numbers.TakeWhile((n, idx) => n >= idx);
+            Console.WriteLine("\n3. Take While n >= index:");
+            foreach (var n in untilLess)
+                Console.WriteLine(n);
+
+            var fromDiv3 = numbers.SkipWhile(n => n % 3 != 0);
+            Console.WriteLine("\n4. From First Divisible by 3:");
+            foreach (var n in fromDiv3)
+                Console.WriteLine(n);
+
+            var fromLessPos = numbers.SkipWhile((n, idx) => n >= idx);
+            Console.WriteLine("\n5. From First n < index:");
+            foreach (var n in fromLessPos)
+                Console.WriteLine(n);
+            #endregion
+
+            #region Quantifiers
+            Console.WriteLine("\n=== Quantifiers ===");
 
             string[] dictWords = File.ReadAllLines("dictionary_english.txt");
 
-            Console.WriteLine("\n5. Total chars: " + dictWords.Sum(w => w.Length));
-            Console.WriteLine("6. Shortest word length: " + dictWords.Min(w => w.Length));
-            Console.WriteLine("7. Longest word length: " + dictWords.Max(w => w.Length));
-            Console.WriteLine("8. Average word length: " + dictWords.Average(w => w.Length));
+            bool hasEi = dictWords.Any(w => w.Contains("ei"));
+            Console.WriteLine($"\n1. Any word contains 'ei'? {hasEi}");
+
+            var someOutOfStock = ProductsList.GroupBy(p => p.Category)
+                .Where(g => g.Any(p => p.UnitsInStock == 0));
+            Console.WriteLine("\n2. Categories with Some Out of Stock:");
+            foreach (var g in someOutOfStock)
+                Console.WriteLine($"{g.Key}");
+
+            var allInStock = ProductsList.GroupBy(p => p.Category)
+                .Where(g => g.All(p => p.UnitsInStock > 0));
+            Console.WriteLine("\n3. Categories All In Stock:");
+            foreach (var g in allInStock)
+                Console.WriteLine($"{g.Key}");
             #endregion
 
-            #region Ordering Operators
-            Console.WriteLine("\n=== Ordering Operators ===");
+            #region Grouping Operators
+            Console.WriteLine("\n=== Grouping Operators ===");
 
+            List<int> nums = new List<int> { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
 
-            var sortedByName = products.OrderBy(p => p.ProductName);
-            Console.WriteLine("\n1. Products sorted by name:");
-            foreach (var p in sortedByName)
-                Console.WriteLine(p.ProductName);
+            var groupByRemainder = nums.GroupBy(n => n % 5);
+            Console.WriteLine("\n1. Numbers grouped by remainder %5:");
+            foreach (var g in groupByRemainder)
+            {
+                Console.WriteLine($"Remainder {g.Key}:");
+                foreach (var n in g)
+                    Console.WriteLine(n);
+            }
 
-   
-            string[] ArrOrder1 = { "aPPLE", "AbAcUs", "bRaNcH", "BlUeBeRrY", "ClOvEr", "cHeRry" };
-            var caseInsensitive = ArrOrder1.OrderBy(w => w, StringComparer.OrdinalIgnoreCase);
-            Console.WriteLine("\n2. Case insensitive sort:");
-            foreach (var w in caseInsensitive)
-                Console.WriteLine(w);
+            var groupByFirst = dictWords.GroupBy(w => w[0]);
+            Console.WriteLine("\n2. Words grouped by first letter:");
+            foreach (var g in groupByFirst)
+            {
+                Console.WriteLine($"Letter {g.Key}:");
+                foreach (var w in g.Take(5))
+                    Console.WriteLine(w);
+            }
 
-            var stockDesc = products.OrderByDescending(p => p.UnitsInStock);
-            Console.WriteLine("\n3. Products by stock descending:");
-            foreach (var p in stockDesc)
-                Console.WriteLine($"{p.ProductName} - {p.UnitsInStock}");
-
-
-            string[] digits = { "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine" };
-            var digitSort = digits.OrderBy(d => d.Length).ThenBy(d => d);
-            Console.WriteLine("\n4. Digits sorted:");
-            foreach (var d in digitSort)
-                Console.WriteLine(d);
-
-
-            var sort5 = ArrOrder1.OrderBy(w => w.Length).ThenBy(w => w, StringComparer.OrdinalIgnoreCase);
-            Console.WriteLine("\n5. Words sorted:");
-            foreach (var w in sort5)
-                Console.WriteLine(w);
-
-
-            var sortCatPrice = products.OrderBy(p => p.Category).ThenByDescending(p => p.UnitPrice);
-            Console.WriteLine("\n6. Products sorted by category then price:");
-            foreach (var p in sortCatPrice)
-                Console.WriteLine($"{p.Category} - {p.ProductName} - {p.UnitPrice}");
-
-     
-            var sort7 = ArrOrder1.OrderBy(w => w.Length).ThenByDescending(w => w, StringComparer.OrdinalIgnoreCase);
-            Console.WriteLine("\n7. Words sorted:");
-            foreach (var w in sort7)
-                Console.WriteLine(w);
-
-
-            var reverseDigits = digits.Where(d => d.Length > 1 && d[1] == 'i').Reverse();
-            Console.WriteLine("\n8. Digits with 'i' as second letter reversed:");
-            foreach (var d in reverseDigits)
-                Console.WriteLine(d);
-            #endregion
-
-            #region Transformation Operators
-            Console.WriteLine("\n=== Transformation Operators ===");
-
-
-            var productNames = products.Select(p => p.ProductName);
-            Console.WriteLine("\n1. Product Names:");
-            foreach (var n in productNames)
-                Console.WriteLine(n);
-
-
-            string[] words = { "aPPLE", "BlUeBeRrY", "cHeRry" };
-            var wordTransform = words.Select(w => new { Upper = w.ToUpper(), Lower = w.ToLower() });
-            Console.WriteLine("\n2. Words upper & lower:");
-            foreach (var w in wordTransform)
-                Console.WriteLine($"{w.Upper} - {w.Lower}");
-
-
-            var productProps = products.Select(p => new { p.ProductName, Price = p.UnitPrice });
-            Console.WriteLine("\n3. Products with Price:");
-            foreach (var p in productProps)
-                Console.WriteLine($"{p.ProductName} - {p.Price}");
-
-
-            int[] ArrTransform = { 5, 4, 1, 3, 9, 8, 6, 7, 2, 0 };
-            var matchIndex = ArrTransform.Select((num, index) => new { num, index, match = (num == index) });
-            Console.WriteLine("\n4. Number matches position:");
-            foreach (var m in matchIndex)
-                Console.WriteLine($"{m.num}: {m.match}");
-
-
-            int[] numbersA = { 0, 2, 4, 5, 6, 8, 9 };
-            int[] numbersB = { 1, 3, 5, 7, 8 };
-            var pairs = from a in numbersA
-                        from b in numbersB
-                        where a < b
-                        select new { a, b };
-            Console.WriteLine("\n5. Pairs a < b:");
-            foreach (var p in pairs)
-                Console.WriteLine($"{p.a} is less than {p.b}");
-
-            
-            var ordersLess500 = customers.SelectMany(c => c.Orders)
-                                         .Where(o => o.Total < 500);
-            Console.WriteLine("\n6. Orders < 500:");
-            foreach (var o in ordersLess500)
-                Console.WriteLine($"Order {o.OrderID} - {o.Total}");
-
-          
-            var ordersAfter98 = customers.SelectMany(c => c.Orders)
-                                         .Where(o => o.OrderDate.Year >= 1998);
-            Console.WriteLine("\n7. Orders after 1998:");
-            foreach (var o in ordersAfter98)
-                Console.WriteLine($"Order {o.OrderID} - {o.OrderDate}");
+            string[] Arr = { "from", "salt", "earn", "last", "near", "form" };
+            var groupByAnagram = Arr.GroupBy(w => String.Concat(w.OrderBy(c => c)));
+            Console.WriteLine("\n3. Words grouped by same characters:");
+            foreach (var g in groupByAnagram)
+            {
+                Console.WriteLine("Group:");
+                foreach (var w in g)
+                    Console.WriteLine(w);
+            }
             #endregion
         }
     }
